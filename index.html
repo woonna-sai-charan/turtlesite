@@ -40,7 +40,7 @@
         .progress {
             width: 0;
             height: 100%;
-            background: linear-gradient(90deg, var(--primary-color), #45a049);
+            background: linear-gradient(90deg, var(--primary-color), #fc0000c5);
             transition: width 0.5s ease-in-out;
             position: relative;
             overflow: hidden;
@@ -166,6 +166,7 @@
             gap: 10px;
         }
         .edit-btn, .save-btn, .delete-btn {
+            position: relative;
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -240,7 +241,36 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
-        }
+        }.task-input-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px; /* Adjust the space between the input and the button */
+    margin-bottom: 20px; /* Space below the container */
+}
+
+.task-input-container input[type="text"] {
+    flex-grow: 1; /* Allows the input to fill available space */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.task-input-container button {
+    position: relative;
+    bottom: 5px;
+    padding: 10px 20px ;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.task-input-container button:hover {
+    background-color: #0056b3;
+}
+        
     </style>
 </head>
 <body>
@@ -262,8 +292,10 @@
         <div class="content-section">
             <section class="section">
                 <h2>To-Do List</h2>
-                <input type="text" id="todoInput" placeholder="Add a new task">
-                <button onclick="addTodo()">Add</button>
+                <div class="task-input-container">
+                    <input type="text" id="todoInput" placeholder="Add a new task">
+                    <button onclick="addTodo()">Add</button>
+                </div>
                 <ul id="todoList"></ul>
             </section>
             <section class="section">
