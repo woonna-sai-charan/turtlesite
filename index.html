@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day Progress, Notes, To-Do, and NoFap Tracker</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #f44336;
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            transition: background-color 1s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+        header {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .progress-bar {
+            width: 80%;
+            max-width: 600px;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .progress {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), #45a049);
+            transition: width 0.5s ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        #percentage { font-size: 24px; font-weight: bold; color: var(--text-color); }
+        #time { font-size: 18px; color: #555; margin-top: 10px; }
+        main {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            flex-grow: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .note-section {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .content-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+        }
+        .section {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            width: calc(50% - 20px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        h2 { 
+            margin-top: 0; 
+            color: var(--text-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+        ul { list-style-type: none; padding: 0; }
+        li { 
+            margin-bottom: 10px; 
+            display: flex;
+            align-items: center;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        li:hover { background-color: #f0f0f0; }
+        input[type="text"], textarea { 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 10px; 
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button { 
+            padding: 10px 15px; 
+            cursor: pointer; 
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover { background-color: #45a049; }
+        .calendar { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 5px; 
+        }
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e0e0e0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 50%;
+            font-size: 14px;
+        }
+        .day:hover { background-color: #d0d0d0; }
+        .day.current { border: 2px solid var(--primary-color); }
+        .day.green { background-color: var(--primary-color); color: white; }
+        .day.red { background-color: var(--secondary-color); color: white; }
+        .note {
+            background-color: #fff;
+            border-left: 4px solid var(--primary-color);
+            padding: 10px;
+            margin-bottom: 10px;
+            position: relative;
+            border-radius: 0 5px 5px 0;
+        }
+        .note-time {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.8em;
+            color: #888;
+        }
+        .note-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .edit-btn, .save-btn, .delete-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .delete-btn {
+            background-color: var(--secondary-color);
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+        .edit-btn:hover, .save-btn:hover {
+            background-color: #45a049;
+        }
+        .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+        .checkbox-custom input {
+            opacity: 0;
+            position: absolute;
+        }
+        .checkbox-custom .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: #eee;
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+        .checkbox-custom:hover input ~ .checkmark {
+            background-color: #ccc;
+        }
+        .checkbox-custom input:checked ~ .checkmark {
+            background-color: var(--primary-color);
+        }
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+        .checkbox-custom input:checked ~ .checkmark:after {
+            display: block;
+        }
+        .checkbox-custom .checkmark:after {
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        #selectedDate {
+            display: block;
+            margin: 10px auto;
+            font-size: 16px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <div id="percentage">0%</div>
+        <div id="time"></div>
+    </header>
+    <main>
+        <input type="date" id="selectedDate" onchange="loadDataByDate()" />
+        <section class="note-section">
+            <h2>Note to Myself</h2>
+            <textarea id="noteInput" rows="4" placeholder="Write a note to yourself..."></textarea>
+            <button onclick="addNote()">Add Note</button>
+            <div id="noteList"></div>
+        </section>
+        <div class="content-section">
+            <section class="section">
+                <h2>To-Do List</h2>
+                <input type="text" id="todoInput" placeholder="Add a new task">
+                <button onclick="addTodo()">Add</button>
+                <ul id="todoList"></ul>
+            </section>
+            <section class="section">
+                <h2>NoFap Calendar</h2>
+                <div class="calendar" id="calendar"></div>
+                <div id="streakInfo"></div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Function to get formatted date string
+        function getFormattedDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Function to update progress bar and time
+        function updateProgress() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            
+            const totalSeconds = (end - start) / 1000;
+            const elapsedSeconds = (now - start) / 1000;
+            const percentage = (elapsedSeconds / totalSeconds) * 100;
+            
+            document.getElementById('progress').style.width = `${percentage}%`;
+            document.getElementById('percentage').textContent = `${percentage.toFixed(2)}%`;
+            
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('time').textContent = `${hours}:${minutes}:${seconds} ${ampm}`;
+
+            updateBackground(now.getHours());
+        }
+
+        // Function to update background color based on the time of the day
+        function updateBackground(hour) {
+            let backgroundColor;
+            if (hour >= 5 && hour < 12) {
+                backgroundColor = `rgb(255, ${200 + (hour - 5) * 7}, ${100 + (hour - 5) * 20})`;
+            } else if (hour >= 12 && hour < 17) {
+                backgroundColor = `rgb(${255 - (hour - 12) * 10}, ${255 - (hour - 12) * 5}, ${200 + (hour - 12) * 11})`;
+            } else if (hour >= 17 && hour < 20) {
+                backgroundColor = `rgb(${70 + (hour - 17) * 10}, ${100 + (hour - 17) * 10}, ${170 + (hour - 17) * 10})`;
+            } else {
+                backgroundColor = `rgb(${10 + (hour >= 20 ? hour - 20 : hour + 4) * 5}, ${20 + (hour >= 20 ? hour - 20 : hour + 4) * 5}, ${50 + (hour >= 20 ? hour - 20 : hour + 4) * 10})`;
+            }
+            document.body.style.backgroundColor = backgroundColor;
+        }
+
+        // Function to add a note
+        function addNote() {
+            const input = document.getElementById('noteInput');
+            const list = document.getElementById('noteList');
+            if (input.value.trim() !== '') {
+                const now = new Date();
+                const timeString = now.toLocaleString();
+                const note = document.createElement('div');
+                note.className = 'note';
+                note.innerHTML = `
+                    <div contenteditable="false">${input.value}</div>
+                    <div class="note-time">${timeString}</div>
+                    <div class="note-actions">
+                        <button class="edit-btn" onclick="editNote(this)">Edit</button>
+                        <button class="delete-btn" onclick="deleteNote(this)">Delete</button>
+                    </div>
+                `;
+                list.insertBefore(note, list.firstChild);
+                input.value = '';
+                saveNotes();
+            }
+        }
+
+        // Function to edit a note
+        function editNote(btn) {
+            const note = btn.parentElement.previousElementSibling;
+            const isEditable = note.contentEditable === "true";
+            note.contentEditable = !isEditable;
+            btn.textContent = isEditable ? "Edit" : "Save";
+            if (isEditable) saveNotes();
+        }
+
+        // Function to delete a note
+        function deleteNote(btn) {
+            btn.parentElement.parentElement.remove();
+            saveNotes();
+        }
+
+        // Function to save notes to localStorage
+        function saveNotes() {
+            const selectedDate = document.getElementById('selectedDate').value || getFormattedDate(new Date());
+            const notes = [];
+            document.querySelectorAll('#noteList .note').forEach(note => {
+                notes.push({
+                    content: note.children[0].textContent,
+                    time: note.children[1].textContent
+                });
+            });
+            const allNotes = JSON.parse(localStorage.getItem('allNotes')) || {};
+            allNotes[selectedDate] = notes;
+            localStorage.setItem('allNotes', JSON.stringify(allNotes));
+        }
+
+        // Function to load notes from localStorage
+        function loadNotes() {
+            const selectedDate = document.getElementById('selectedDate').value || getFormattedDate(new Date());
+            const allNotes = JSON.parse(localStorage.getItem('allNotes')) || {};
+            const notes = allNotes[selectedDate] || [];
+            const noteList = document.getElementById('noteList');
+            noteList.innerHTML = '';
+            notes.forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note';
+                noteElement.innerHTML = `
+                    <div contenteditable="false">${note.content}</div>
+                    <div class="note-time">${note.time}</div>
+                    <div class="note-actions">
+                        <button class="edit-btn" onclick="editNote(this)">Edit</button>
+                        <button class="delete-btn" onclick="deleteNote(this)">Delete</button>
+                    </div>
+                `;
+                noteList.appendChild(noteElement);
+            });
+        }
+
+        // Function to add a todo item
+        function addTodo() {
+            const input = document.getElementById('todoInput');
+            const list = document.getElementById('todoList');
+            if (input.value.trim() !== '') {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <label class="checkbox-custom">
+                        <input type="checkbox" onchange="toggleTodoCheck(this)">
+                        <span class="checkmark"></span>
+                    </label>
+                    <span contenteditable="false">${input.value}</span>
+                    <button class="edit-btn" onclick="editTodoItem(this)">Edit</button>
+                    <button class="delete-btn" onclick="deleteTodoItem(this)">Delete</button>
+                `;
+                list.appendChild(li);
+                input.value = '';
+                saveTodos();
+            }
+        }
+
+        // Function to toggle todo item checked state
+        function toggleTodoCheck(checkbox) {
+            checkbox.parentElement.nextElementSibling.style.textDecoration = checkbox.checked ? 'line-through' : 'none';
+            saveTodos();
+        }
+
+        // Function to edit a todo item
+        function editTodoItem(btn) {
+            const todo = btn.previousElementSibling;
+            const isEditable = todo.contentEditable === "true";
+            todo.contentEditable = !isEditable;
+            btn.textContent = isEditable ? "Edit" : "Save";
+            if (isEditable) saveTodos();
+        }
+
+        // Function to delete a todo item
+        function deleteTodoItem(btn) {
+            btn.parentElement.remove();
+            saveTodos();
+        }
+
+        // Function to save todos to localStorage
+        function saveTodos() {
+            const selectedDate = document.getElementById('selectedDate').value || getFormattedDate(new Date());
+            const todos = [];
+            document.querySelectorAll('#todoList li').forEach(todo => {
+                todos.push({
+                    content: todo.children[1].textContent,
+                    checked: todo.children[0].children[0].checked
+                });
+            });
+            const allTodos = JSON.parse(localStorage.getItem('allTodos')) || {};
+            allTodos[selectedDate] = todos;
+            localStorage.setItem('allTodos', JSON.stringify(allTodos));
+        }
+
+        // Function to load todos from localStorage
+        function loadTodos() {
+            const selectedDate = document.getElementById('selectedDate').value || getFormattedDate(new Date());
+            const allTodos = JSON.parse(localStorage.getItem('allTodos')) || {};
+            const todos = allTodos[selectedDate] || [];
+            const todoList = document.getElementById('todoList');
+            todoList.innerHTML = '';
+            todos.forEach(todo => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <label class="checkbox-custom">
+                        <input type="checkbox" ${todo.checked ? 'checked' : ''} onchange="toggleTodoCheck(this)">
+                        <span class="checkmark"></span>
+                    </label>
+                    <span contenteditable="false" style="text-decoration: ${todo.checked ? 'line-through' : 'none'}">${todo.content}</span>
+                    <button class="edit-btn" onclick="editTodoItem(this)">Edit</button>
+                    <button class="delete-btn" onclick="deleteTodoItem(this)">Delete</button>
+                `;
+                todoList.appendChild(li);
+            });
+        }
+
+        // Function to create the calendar with nofap tracking
+        function createCalendar() {
+            const calendar = document.getElementById('calendar');
+            const currentDate = new Date();
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            
+            // Add day labels
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            days.forEach(day => {
+                const dayLabel = document.createElement('div');
+                dayLabel.textContent = day;
+                dayLabel.style.fontWeight = 'bold';
+                calendar.appendChild(dayLabel);
+            });
+            
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < firstDay.getDay(); i++) {
+                calendar.appendChild(document.createElement('div'));
+            }
+            
+            for (let i = 1; i <= lastDay.getDate(); i++) {
+                const day = document.createElement('div');
+                day.className = 'day';
+                day.textContent = i;
+                if (i === currentDate.getDate()) {
+                    day.classList.add('current');
+                }
+                day.addEventListener('click', function(e) {
+                    if (e.button === 0) { // Left click
+                        this.classList.toggle('green');
+                        this.classList.remove('red');
+                    }
+                    updateStreak();
+                });
+                day.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    this.classList.toggle('red');
+                    this.classList.remove('green');
+                    updateStreak();
+                });
+                calendar.appendChild(day);
+            }
+
+            loadStreak();
+        }
+
+        // Function to update the streak info
+        function updateStreak() {
+            const days = Array.from(document.querySelectorAll('.calendar .day'));
+            let currentStreak = 0;
+            let maxStreak = 0;
+            let tempStreak = 0;
+            let broken = false;
+
+            days.forEach(day => {
+                if (day.classList.contains('green')) {
+                    tempStreak++;
+                    if (!broken) {
+                        currentStreak = tempStreak;
+                    }
+                    maxStreak = Math.max(maxStreak, tempStreak);
+                } else if (day.classList.contains('red')) {
+                    tempStreak = 0;
+                    broken = true;
+                }
+            });
+
+            document.getElementById('streakInfo').innerHTML = `
+                <p>Current Streak: ${currentStreak} days</p>
+                <p>Max Streak: ${maxStreak} days</p>
+            `;
+
+            saveStreak();
+        }
+
+        // Function to save streak info to localStorage
+        function saveStreak() {
+            const days = Array.from(document.querySelectorAll('.calendar .day')).map(day => ({
+                green: day.classList.contains('green'),
+                red: day.classList.contains('red')
+            }));
+            localStorage.setItem('streak', JSON.stringify(days));
+        }
+
+        // Function to load streak info from localStorage
+        function loadStreak() {
+            const days = JSON.parse(localStorage.getItem('streak')) || [];
+            days.forEach((day, index) => {
+                const dayElement = document.querySelectorAll('.calendar .day')[index];
+                if (day.green) {
+                    dayElement.classList.add('green');
+                }
+                if (day.red) {
+                    dayElement.classList.add('red');
+                }
+            });
+            updateStreak();
+        }
+
+        // Function to load data by selected date
+        function loadDataByDate() {
+            loadNotes();
+            loadTodos();
+        }
+
+        // Initialize page
+        updateProgress();
+        setInterval(updateProgress, 1000);
+        createCalendar();
+        loadNotes();
+        loadTodos();
+
+        // Event listeners for Enter key
+        document.getElementById('todoInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addTodo();
+        });
+        document.getElementById('noteInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                addNote();
+            }
+        });
+
+        // Set default selected date to today
+        document.getElementById('selectedDate').value = getFormattedDate(new Date());
+    </script>
+</body>
+</html>
